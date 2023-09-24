@@ -117,6 +117,23 @@
   <script>window.jQuery || document.write('<script type="text/javascript" src="/static/js/libs/jquery-1.11.1.min.js"><\/script>')</script>
   <script type="text/javascript" src="/static/js/libs/bootstrap-3.1.1.min.js" defer></script>
   <script type="text/javascript" src="/static/js/plugins.js" defer></script>
-
+  <script>
+    const deleteVenueBtn = document.getElementById("delete_venue");
+    deleteVenueBtn.onclick = function (e) {
+      const venueid = e.target.dataset["id"];
+      fetch('/venues/' + venueid , {
+        method: 'DELETE'
+      })
+      .then(response => response.json())
+      .then(jsonResponse => {
+        if(jsonResponse['success']){
+          window.location.href = '/'
+        } else {
+          alert('An error occurred! Venue could not be deleted.');
+        }
+      })
+    }
+  
+    </script>
 </body>
 </html>
