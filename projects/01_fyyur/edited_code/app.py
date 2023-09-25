@@ -1,5 +1,6 @@
 '''
-Python file containing all central components for configuring and running the web application Fyyur, i.e.,
+Python file containing all central components for configuring 
+and running the web application Fyyur, i.e.,
 - import and/or definition of all required functions
 - definition of app
 - connecting to db
@@ -13,7 +14,16 @@ Python file containing all central components for configuring and running the we
 import json
 import dateutil.parser
 import babel
-from flask import Flask, render_template, request, Response, flash, redirect, url_for, jsonify
+from flask import (
+  Flask, 
+  render_template, 
+  request, 
+  Response, 
+  flash, 
+  redirect, 
+  url_for, 
+  jsonify
+)
 from flask_moment import Moment
 from flask_migrate import Migrate
 from flask_sqlalchemy import SQLAlchemy
@@ -22,6 +32,7 @@ import logging
 from logging import Formatter, FileHandler
 from flask_wtf import Form
 import sys
+from models import db, Venue, Artist, Show
 from forms import *
 from config import SQLALCHEMY_DATABASE_URI
 
@@ -33,73 +44,11 @@ from config import SQLALCHEMY_DATABASE_URI
 app = Flask(__name__)
 app.config.from_object('config')
 moment = Moment(app)
-db = SQLAlchemy(app)
+db.init_app(app)
 migrate = Migrate(app, db)
 
 # TODO: connect to a local postgresql database
 app.config['SQLALCHEMY_DATABASE_URI'] = SQLALCHEMY_DATABASE_URI
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False 
-
-#----------------------------------------------------------------------------#
-# Models.
-#----------------------------------------------------------------------------#
-
-# TODO: Implement Show and Artist models, and complete all model relationships and properties, as a database migration.
-
-# create an association table for the many-to-many-relationship between venues and artists
-Show = db.Table('Show', db.Model.metadata,
-    db.Column('Venue_id', db.Integer, db.ForeignKey('Venue.id')),
-    db.Column('Artist_id', db.Integer, db.ForeignKey('Artist.id')),
-    db.Column('start_time', db.DateTime)
-)
-
-class Venue(db.Model):
-  __tablename__ = 'Venue'
-  id = db.Column(db.Integer, primary_key=True)
-  name = db.Column(db.String) # name of venue
-  city = db.Column(db.String(120)) # city of venue
-  state = db.Column(db.String(120)) # state, where city is located
-  address = db.Column(db.String(120)) # full address of venue
-  phone = db.Column(db.String(120)) # phone contact of venue
-  image_link = db.Column(db.String(500)) # link to image of venue
-  facebook_link = db.Column(db.String(120)) # link to facebook page of venue
-  website_link = db.Column(db.String(120)) # link to website of venue
-  # TODO: implement any missing fields, as a database migration using Flask-Migrate
-  genres = db.Column(db.ARRAY(db.String(120))) # genres of the venue (use of array, because multiple genres in one venue are possible)
-  seeking_talent = db.Column(db.Boolean, nullable=False, default=False) # information if venue is seeking artists or not
-  seeking_description = db.Column(db.String(500)) # optional seeking description
-  venues = db.relationship('Artist', secondary=Show, backref=db.backref('shows', lazy='joined')) # many-to-many relationship to Artists via association table 'Show'
-
-  def __repr__(self):
-      '''
-      Representation function for venues
-      '''
-      return 'Venue Id:{} - Name: {}'.format(self.id, self.name)
-
-class Artist(db.Model):
-  __tablename__ = 'Artist'
-
-  id = db.Column(db.Integer, primary_key=True)
-  name = db.Column(db.String) # name of artist
-  city = db.Column(db.String(120)) # name of city, the artist is located
-  state = db.Column(db.String(120)) # state of where city is located
-  phone = db.Column(db.String(120)) # phone contact of artist
-  genres = db.Column(db.ARRAY(db.String())) # genres of the artist (use of array, because artists could play multiple genres)
-  image_link = db.Column(db.String(500))
-  facebook_link = db.Column(db.String(120))
-  # TODO: implement any missing fields, as a database migration using Flask-Migrate
-  seeking_venue = db.Column(db.Boolean, nullable=False, default=False) # information if artist is seeking venues or not
-  seeking_description = db.Column(db.String(500)) # optional seeking description
-  website_link = db.Column(db.String(120))
-
-  def __repr__(self):
-      '''
-      Representation function for artists
-      '''
-      return 'Artist Id:{} - Name: {}'.format(self.id, self.name)
-
-with app.app_context():
-  db.create_all()
 
 #----------------------------------------------------------------------------#
 # Custom Functions.
@@ -116,7 +65,8 @@ def object_as_dict(obj):
 
 def get_dict_list_from_result(result):
   '''
-  Converts SQLALchemy collections results (sqlalchemy.util._collections.result) to dictionary
+  Converts SQLALchemy collections results (sqlalchemy.util._collections.result) 
+  to dictionary
 
   Source: https://stackoverflow.com/questions/48232222/how-to-deal-with-sqlalchemy-util-collections-result
   '''
@@ -150,7 +100,8 @@ app.jinja_env.filters['datetime'] = format_datetime
 @app.route('/')
 def index():
   '''
-  Controller for homepage (template/pages/home.html) of Fyyur with following functions
+  Controller for homepage (template/pages/home.html) of Fyyur with 
+  following functions
   - create new artists
   - create new venues
   - create new shows
@@ -161,68 +112,97 @@ def index():
   recent_artists = Artist.query.order_by(Artist.id.desc()).limit(10).all()
   recent_venues = Venue.query.order_by(Venue.id.desc()).limit(10).all()
   # list recently created artists and venues
-  return render_template('pages/home.html', recent_artists = recent_artists, recent_venues = recent_venues)
+  return render_template(
+    'pages/home.html',
+    recent_artists = recent_artists,
+    recent_venues = recent_venues
+  )
 
 
 #  Venues
-#  ----------------------------------------------------------------
+#----------------------------------------------------------------------------#
 
 @app.route('/venues')
 def venues():
   '''
-  Controller for venue page (template/pages/venues.html) of Fyyur with following functions
+  Controller for venue page (template/pages/venues.html) of Fyyur with 
+  following functions
   - show list of all venues
   - group list by location (city, state)
   - show number 
   '''
   # TODO: replace with real venues data.
-  #       num_upcoming_shows should be aggregated based on number of upcoming shows per venue.
+  #       num_upcoming_shows should be aggregated based on number of upcoming 
+  #       shows per venue.
 
   # create a list of dictionaries of the cities and states of venues
-  data = get_dict_list_from_result(db.session.query(Venue.city, Venue.state).group_by(Venue.city, Venue.state))
+  data = []
+  locations = Venue.query.order_by(Venue.state, Venue.city).all()
 
-  # determine number of shows in same city and venue by creating a new key in the dictionary, that contains a list of venues that are located in the same city
-  for location in data:
-    location['venues'] = [object_as_dict(venue) for venue in Venue.query.filter_by(city = location['city']).all()]
-    for venue in location['venues']:
-      # determine number of upcoming shows
-      venue['num_shows'] = db.session.query(func.count(Show.c.Venue_id)).filter(Show.c.Venue_id == venue['id']).filter(Show.c.start_time > datetime.now()).all()[0][0]
+  for location in locations:
+      location_venues = Venue.query.filter_by(state=location.state).filter_by(city=location.city).all()
+      venue = []
+      for v in location_venues:
+          venue.append({
+              'id': v.id,
+              'name': v.name,
+              'num_upcoming_shows': len(
+                  db.session.query(Show).filter(Show.venue_id == v.id).filter(Show.start_time > datetime.now()).all())
+          })
+
+      data.append({
+          'city': location.city,
+          'state': location.state,
+          'venues': venue
+      })
+
   return render_template('pages/venues.html', areas=data);
 
 
 @app.route('/venues/search', methods=['POST'])
 def search_venues():
   '''
-  Controller for venues' search page (template/pages/search_venues.html) of Fyyur with following functions
+  Controller for venues' search page (template/pages/search_venues.html) 
+  of Fyyur with following functions
   - search for venues (get list of results that match the search term)
   - return number of database entries that match the search term
   - redirect to venue page
   '''
-  # TODO: implement search on venues with partial string search. Ensure it is case-insensitive.
+  # TODO: implement search on venues with partial string search. Ensure it is
+  # case-insensitive.
   # seach for Hop should return "The Musical Hop".
-  # search for "Music" should return "The Musical Hop" and "Park Square Live Music & Coffee"
+  # search for "Music" should return "The Musical Hop" and 
+  # "Park Square Live Music & Coffee"
   
   # get search term from request
   search_term = request.form.get('search_term', '')
 
   # query database entries of venues that contain the search term
-  data = Venue.query.filter(Venue.name.contains(search_term)).all()
+  venues = Venue.query.filter(Venue.name.ilike("%" + search_term + "%")).all()
 
-  # count query results
-  data_count = db.session.query(func.count(Venue.id)).filter(Venue.name.contains(search_term)).all()
-  
   # create a dictionary with the results of the search
   response={
-    "count": data_count,
-    "data": data
-    }
-  
-  return render_template('pages/search_venues.html', results=response, search_term=search_term)
+    "count": len(venues),
+    "data": []
+  }
+
+  for venue in venues:
+    response["data"].append({
+        'id': venue.id,
+        'name': venue.name,
+    })
+
+  return render_template(
+    'pages/search_venues.html',
+    results=response,
+    search_term=search_term
+  )
 
 @app.route('/venues/<int:venue_id>')
 def show_venue(venue_id):
   '''
-  Controller for the venue page (template/pages/venues/<int:venue_id>.html) of Fyyur with following functions
+  Controller for the venue page (template/pages/venues/<int:venue_id>.html) 
+  of Fyyur with following functions
   - show all information of venue database entries
   - show list of shows (past and upcoming)
   - delete venue
@@ -235,41 +215,31 @@ def show_venue(venue_id):
   # get shows of venue (past and upcoming)
   # get the artist's name and image to show on page
   # count shows
-  venue.past_shows = (db.session.query(
-    Artist.id.label("artist_id"), 
-    Artist.name.label("artist_name"), 
-    Artist.image_link.label("artist_image_link"), 
-    Show)
-    .filter(Show.c.Venue_id == venue_id)
-    .filter(Show.c.Artist_id == Artist.id)
-    .filter(Show.c.start_time <= datetime.now())
-    .all())
-  
-  venue.past_shows_count = (db.session.query(
-    func.count(Show.c.Venue_id))
-    .filter(Show.c.Venue_id == venue_id)
-    .filter(Show.c.start_time <= datetime.now())
-    .all())[0][0]
 
-  venue.upcoming_shows = (db.session.query(
-    Artist.id.label("artist_id"), 
-    Artist.name.label("artist_name"), 
-    Artist.image_link.label("artist_image_link"), 
-    Show)
-    .filter(Show.c.Venue_id == venue_id)
-    .filter(Show.c.Artist_id == Artist.id)
-    .filter(Show.c.start_time > datetime.now())
-    .all())
-  
-  venue.upcoming_shows_count = (db.session.query(
-    func.count(Show.c.Venue_id))
-    .filter(Show.c.Venue_id == venue_id)
-    .filter(Show.c.start_time > datetime.now())
-    .all())[0][0]
-  
-  print(venue.past_shows)
+  past_shows = []
+  upcoming_shows = []
 
-  return render_template('pages/show_venue.html', venue=venue)
+  for show in venue.shows:
+    temp_show = {
+        'artist_id': show.artist_id,
+        'artist_name': show.artist.name,
+        'artist_image_link': show.artist.image_link,
+        'start_time': show.start_time.strftime("%m/%d/%Y, %H:%M")
+    } 
+    if show.start_time <= datetime.now():
+        past_shows.append(temp_show)
+    else:
+        upcoming_shows.append(temp_show)
+
+  # object class to dict
+  data = vars(venue)
+
+  data['past_shows'] = past_shows
+  data['upcoming_shows'] = upcoming_shows
+  data['past_shows_count'] = len(past_shows)
+  data['upcoming_shows_count'] = len(upcoming_shows)
+  
+  return render_template('pages/show_venue.html', venue=data)
 
 #  Create Venue
 #  ----------------------------------------------------------------
@@ -277,7 +247,8 @@ def show_venue(venue_id):
 @app.route('/venues/create', methods=['GET'])
 def create_venue_form():
   '''
-  Controller for the create venue page (template/pages/venues/create.html) of Fyyur with following functions
+  Controller for the create venue page (template/pages/venues/create.html) 
+  of Fyyur with following functions
   - show blank create venue form
   '''
   # initialize VenueForm
@@ -287,7 +258,8 @@ def create_venue_form():
 @app.route('/venues/create', methods=['POST'])
 def create_venue_submission():
   '''
-  Controller for the create venue page (template/pages/venues/create.html) of Fyyur with following functions
+  Controller for the create venue page (template/pages/venues/create.html) 
+  of Fyyur with following functions
   - handle submitted venue data
   - create new venue
   - error handling
@@ -295,7 +267,7 @@ def create_venue_submission():
 
   # TODO: insert form data as a new Venue record in the db, instead
   # create form for request venue data
-  form = VenueForm(request.form)
+  form = VenueForm(request.form, meta={'csrf': False})
 
   # TODO: modify data to be the data object returned from db insertion
   # validate form input
@@ -303,54 +275,57 @@ def create_venue_submission():
     try:
       # create new venue instance with form data
       newVenue = Venue(
-        name = request.form['name'],
-        city = request.form['city'],
-        state = request.form['state'],
-        address = request.form['address'],
-        phone = request.form['phone'],
-        image_link = request.form['image_link'],
-        # seeking_talent = request.form['seeking_talent'],
-        seeking_description = request.form['seeking_description'],
-        website_link = request.form['website_link'],
-        genres = request.form.getlist('genres'),
-        facebook_link = request.form['facebook_link'])
+        name = form.name.data,
+        city = form.city.data,
+        state = form.state.data,
+        address = form.address.data,
+        phone = form.phone.data,
+        image_link = form.image_link.data,
+        seeking_talent = form.seeking_talent.data,
+        seeking_description = form.seeking_description.data,
+        website_link = form.website_link.data,
+        genres = form.genres.data,
+        facebook_link = form.facebook_link.data)
 
       # add and commit transaction
       with app.app_context():
         db.session.add(newVenue)
         db.session.commit()
       # on successful db insert, flash success
-      flash('Venue ' + request.form['name'] + ' was successfully listed!')
+      flash('Venue ' + form.name.data + ' was successfully listed!')
     except:
       # TODO: on unsuccessful db insert, flash an error instead.
       # rollback session in case of error
       db.session.rollback()
       # print error
       print(sys.exc_info())
-      flash('An error occurred. Venue ' + request.form['name'] + ' could not be listed.')
+      flash('An error occurred. Venue ' + form.name.data + ' could not be listed.')
     finally:
       # close session
       db.session.close()
   else:
     # flash validation error
     flash(form.errors)
-    flash('An error occurred due to form validation. Venue {} could not be listed.'.format(request.form['name']))
+    flash('An error occurred due to form validation. Venue {} could not be listed.'.format(form.name.data))
 
   return render_template('pages/home.html')
 
 @app.route('/venues/<venue_id>', methods=['DELETE'])
 def delete_venue(venue_id):
   '''
-  Controller for the delete venue page (template/pages/venues/<venue_id>.html) of Fyyur with following functions
+  Controller for the delete venue page (template/pages/venues/<venue_id>.html) 
+  of Fyyur with following functions
   - delete existing venue database entry
   - error handling
   '''
   
   # TODO: Complete this endpoint for taking a venue_id, and using
-  # SQLAlchemy ORM to delete a record. Handle cases where the session commit could fail.
+  # SQLAlchemy ORM to delete a record. Handle cases where the session 
+  # commit could fail.
 
-  # BONUS CHALLENGE: Implement a button to delete a Venue on a Venue Page, have it so that
-  # clicking that button delete it from the db then redirect the user to the homepage
+  # BONUS CHALLENGE: Implement a button to delete a Venue on a Venue Page, 
+  # have it so that clicking that button delete it from the db then redirect 
+  # the user to the homepage
 
   try:
     # delete database entry selected by venue_id
@@ -370,11 +345,12 @@ def delete_venue(venue_id):
   return jsonify({'success': True})
 
 #  Artists
-#  ----------------------------------------------------------------
+#----------------------------------------------------------------------------#
 @app.route('/artists')
 def artists():
   '''
-  Controller for artist page (template/pages/artists.html) of Fyyur with following functions
+  Controller for artist page (template/pages/artists.html) of Fyyur with 
+  following functions
   - show list of all artists
   - redirect to artist page
   '''
@@ -387,37 +363,48 @@ def artists():
 @app.route('/artists/search', methods=['POST'])
 def search_artists():
   '''
-  Controller for artists' search page (template/pages/search_artists.html) of Fyyur with following functions
+  Controller for artists' search page (template/pages/search_artists.html) 
+  of Fyyur with following functions
   - search for artists (get list of results that match the search term)
   - return number of database entries that match the search term
   - redirect to artist page
   '''
 
-  # TODO: implement search on artists with partial string search. Ensure it is case-insensitive.
-  # seach for "A" should return "Guns N Petals", "Matt Quevado", and "The Wild Sax Band".
+  # TODO: implement search on artists with partial string search. Ensure 
+  # it is case-insensitive.
+  # seach for "A" should return "Guns N Petals", "Matt Quevado", and 
+  # "The Wild Sax Band".
   # search for "band" should return "The Wild Sax Band".
 
   # get search term from request
   search_term = request.form.get('search_term', '')
 
   # query database entries of artists that contain the search term
-  data = Artist.query.filter(Artist.name.contains(search_term)).all()
+  artists = Artist.query.filter(Artist.name.ilike("%" + search_term + "%")).all()
 
-  # count query results
-  data_count = db.session.query(func.count(Artist.id)).filter(Artist.name.contains(search_term)).all()
-  
   # create a dictionary with the results of the search
   response={
-    "count": data_count,
-    "data": data
-    }
+    "count": len(artists),
+    "data": []
+  }
+
+  for artist in artists:
+    response["data"].append({
+        'id': artist.id,
+        'name': artist.name,
+    })
   
-  return render_template('pages/search_venues.html', results=response, search_term=search_term)
+  return render_template(
+    'pages/search_venues.html',
+    results=response,
+    search_term=search_term
+  )
 
 @app.route('/artists/<int:artist_id>')
 def show_artist(artist_id):
   '''
-  Controller for the artist page (template/pages/show_artist.html) of Fyyur with following functions
+  Controller for the artist page (template/pages/show_artist.html) 
+  of Fyyur with following functions
   - shows the artist page with the given artist_id
   - show list of shows (past and upcoming)
   '''
@@ -427,49 +414,38 @@ def show_artist(artist_id):
   artist = Artist.query.get(artist_id)
 
   # get past shows (filter venues by shows containing artist_id and venue_id)
-  artist.past_shows = (db.session.query(
-    Venue.id.label("venue_id"), 
-    Venue.name.label("venue_name"), 
-    Venue.image_link.label("venue_image_link"), 
-    Show)
-    .filter(Show.c.Artist_id == artist_id)
-    .filter(Show.c.Venue_id == Venue.id)
-    .filter(Show.c.start_time <= datetime.now())
-    .all())
-  
-  # get upcoming shows (filter venues by shows containing artist_id and venue_id)
-  artist.upcoming_shows = (db.session.query(
-    Venue.id.label("venue_id"), 
-    Venue.name.label("venue_name"), 
-    Venue.image_link.label("venue_image_link"), 
-    Show)
-    .filter(Show.c.Artist_id == artist_id)
-    .filter(Show.c.Venue_id == Venue.id)
-    .filter(Show.c.start_time > datetime.now())
-    .all())
+  past_shows = []
+  upcoming_shows = []
 
-  # get number of past shows (filter shows containing artist_id)
-  artist.past_shows_count = (db.session.query(
-    func.count(Show.c.Artist_id))
-    .filter(Show.c.Artist_id == artist_id)
-    .filter(Show.c.start_time < datetime.now())
-    .all())[0][0]
-  
-  # get number of upcoming shows (filter shows containing artist_id)
-  artist.upcoming_shows_count = (db.session.query(
-    func.count(Show.c.Artist_id))
-    .filter(Show.c.Artist_id == artist_id)
-    .filter(Show.c.start_time > datetime.now())
-    .all())[0][0]
+  for show in artist.shows:
+    temp_show = {
+        'venue_id': show.venue_id,
+        'venue_name': show.venue.name,
+        'venue_image_link': show.venue.image_link,
+        'start_time': show.start_time.strftime("%m/%d/%Y, %H:%M")
+    } 
+    if show.start_time <= datetime.now():
+        past_shows.append(temp_show)
+    else:
+        upcoming_shows.append(temp_show)
 
-  return render_template('pages/show_artist.html', artist=artist)
+  # object class to dict
+  data = vars(artist)
+
+  data['past_shows'] = past_shows
+  data['upcoming_shows'] = upcoming_shows
+  data['past_shows_count'] = len(past_shows)
+  data['upcoming_shows_count'] = len(upcoming_shows)
+
+  return render_template('pages/show_artist.html', artist=data)
 
 #  Update
-#  ----------------------------------------------------------------
+#----------------------------------------------------------------------------#
 @app.route('/artists/<int:artist_id>/edit', methods=['GET'])
 def edit_artist(artist_id):
   '''
-  Controller for the edit artist page (template/pages/edit_artist.html) of Fyyur with following functions
+  Controller for the edit artist page (template/pages/edit_artist.html) 
+  of Fyyur with following functions
   - render ArtistForm with prefilled values
   '''
   # initialize ArtistForm
@@ -496,7 +472,8 @@ def edit_artist(artist_id):
 @app.route('/artists/<int:artist_id>/edit', methods=['POST'])
 def edit_artist_submission(artist_id):
   '''
-  Controller for the edit artist page (template/pages/edit_artist.html) of Fyyur with following functions
+  Controller for the edit artist page (template/pages/edit_artist.html) 
+  of Fyyur with following functions
   - handle submitted artist data
   - update artist data in database
   - error handling
@@ -537,7 +514,8 @@ def edit_artist_submission(artist_id):
 @app.route('/venues/<int:venue_id>/edit', methods=['GET'])
 def edit_venue(venue_id):
   '''
-  Controller for the edit venue page (template/pages/edit_venue.html) of Fyyur with following functions
+  Controller for the edit venue page (template/pages/edit_venue.html) 
+  of Fyyur with following functions
   - handle submitted venue data
   - venue artist data in database
   - error handling
@@ -567,13 +545,14 @@ def edit_venue(venue_id):
 @app.route('/venues/<int:venue_id>/edit', methods=['POST'])
 def edit_venue_submission(venue_id):
   '''
-  Controller for the edit artist page (template/pages/edit_venue.html) of Fyyur with following functions
+  Controller for the edit artist page (template/pages/edit_venue.html) 
+  of Fyyur with following functions
   - handle submitted venue data
   - update venue data in database
   - error handling
   '''
 
-    # TODO: take values from the form submitted, and update existing
+  # TODO: take values from the form submitted, and update existing
   # venue record with ID <venue_id> using the new attributes
 
   # get venue data from database by venue_id
@@ -609,12 +588,13 @@ def edit_venue_submission(venue_id):
   return redirect(url_for('show_venue', venue_id=venue_id))
 
 #  Create Artist
-#  ----------------------------------------------------------------
+#----------------------------------------------------------------------------#
 
 @app.route('/artists/create', methods=['GET'])
 def create_artist_form():
   '''
-  Controller for the create artist page (template/pages/new_artist.html) of Fyyur with following functions
+  Controller for the create artist page (template/pages/new_artist.html) 
+  of Fyyur with following functions
   - render blank ArtistForm
   '''
   # initialize instance of ArtistForm()
@@ -624,7 +604,8 @@ def create_artist_form():
 @app.route('/artists/create', methods=['POST'])
 def create_artist_submission():
   '''
-  Controller for the create artist page (template/pages/new_artist.html) of Fyyur with following functions
+  Controller for the create artist page (template/pages/new_artist.html) 
+  of Fyyur with following functions
   - handle submitted artist data
   - create new artist
   - error handling
@@ -635,77 +616,80 @@ def create_artist_submission():
   # TODO: modify data to be the data object returned from db insertion
   
   # initialize instance of ArtistForm()
-  form = ArtistForm(request.form)
+  form = ArtistForm(request.form, meta={"csrf": False})
   
   # validate form input
   if form.validate():
     try:
       # create new artist instance with form data
       newArtist = Artist(
-        name = request.form['name'],
-        city = request.form['city'],
-        state = request.form['state'],
-        phone = request.form['phone'],
-        genres = request.form.getlist('genres'),
-        facebook_link = request.form['facebook_link'],
-        image_link = request.form['image_link'],
-        website_link = request.form['website_link'],
-        # seeking_venue = request.form['seeking_venue'],
-        seeking_description = request.form['seeking_description']
+        name = form.name.data,
+        city = form.city.data,
+        state = form.state.data,
+        phone = form.phone.data,
+        genres = form.genres.data,
+        facebook_link = form.facebook_link.data,
+        image_link = form.image_link.data,
+        website_link = form.website_link.data,
+        # seeking_venue = form.seeking_venue.data,
+        seeking_description = form.seeking_description.data
       )
       # add and commit transaction
       with app.app_context():
         db.session.add(newArtist)
         db.session.commit()
       # on successful db insert, flash success
-      flash('Artist ' + request.form['name'] + ' was successfully listed!')
+      flash('Artist ' + form.name.data + ' was successfully listed!')
     except:
       # TODO: on unsuccessful db insert, flash an error instead.
       # rollback session in case of error
       db.session.rollback()
       # print error
       print(sys.exc_info())
-      flash('An error occurred. Artist ' + request.form['name'] + ' could not be listed.')
+      flash('An error occurred. Artist ' + form.name.data + ' could not be listed.')
     finally:
       # close session
       db.session.close()
   else:
     # flash validation error
     flash(form.errors)
-    flash('An error occurred due to form validation. Artist {} could not be listed.'.format(request.form['name']))
+    flash('An error occurred due to form validation. Artist {} could not be listed.'.format(form.name.data))
   
   return render_template('pages/home.html')
 
 #  Shows
-#  ----------------------------------------------------------------
+#----------------------------------------------------------------------------#
 
 @app.route('/shows')
 def shows():
   '''
-  Controller for the shows page (template/pages/shows.html) of Fyyur with following functions
+  Controller for the shows page (template/pages/shows.html) 
+  of Fyyur with following functions
   - list all shows
   '''
   # displays list of shows at /shows
   # TODO: replace with real venues data.
 
-  # query all shows from association table
-  data = (db.session.query(
-    Venue.id.label("venue_id"), 
-    Venue.name.label("venue_name"),
-    Artist.id.label("artist_id"), 
-    Artist.name.label("artist_name"), 
-    Artist.image_link.label("artist_image_link"), 
-    Show)
-    .filter(Show.c.Venue_id == Venue.id)
-    .filter(Show.c.Artist_id == Artist.id)
-    .all())
+  # query all shows and append elements to array
+  data = []
+  shows = db.session.query(Show).join(Artist).join(Venue).all()
+  for show in shows:
+    data.append({
+    "venue_id" : show.venue_id,
+    "venue_name" : show.venue.name,
+    "artist_id" : show.artist_id,
+    "artist_image_link" : show.artist.image_link,
+    "artist_name" : show.artist.name,
+    "start_time" : show.start_time
+    })
 
   return render_template('pages/shows.html', shows=data)
 
 @app.route('/shows/create')
 def create_shows():
   '''
-  Controller for the create show page (template/pages/new_show.html) of Fyyur with following functions
+  Controller for the create show page (template/pages/new_show.html) 
+  of Fyyur with following functions
   - render blank ShowForm
   '''
   # renders form. do not touch.
@@ -715,30 +699,33 @@ def create_shows():
 @app.route('/shows/create', methods=['POST'])
 def create_show_submission():
   '''
-  Controller for the create show page (template/pages/new_show.html) of Fyyur with following functions
+  Controller for the create show page (template/pages/new_show.html) 
+  of Fyyur with following functions
   - handle submitted show data
   - create new show
   - error handling
   '''
   
-  # called to create new shows in the db, upon submitting new show listing form
+  # called to create new shows in the db, 
+  # upon submitting new show listing form
   # TODO: insert form data as a new Show record in the db, instead
 
   # initialize instance of ShowForm()
-  form = ShowForm(request.form)
+  form = ShowForm(request.form, meta={"csrf": False})
   
   # validate form input
   if form.validate():
     try:
       # create new show instance with form data
-      newShow = Show.insert().values(
-        Venue_id = request.form['venue_id'],
-        Artist_id = request.form['artist_id'],
-        start_time = request.form['start_time']
+      newShow = Show(
+        venue_id = form.venue_id.data,
+        artist_id = form.artist_id.data,
+        start_time = form.start_time.data
       )
       # execute and commit transaction
-      db.session.execute(newShow)
-      db.session.commit()
+      with app.app_context():
+        db.session.add(newShow)
+        db.session.commit()
       # on successful db insert, flash success
       flash('Show  was successfully listed!')
     except:
@@ -776,7 +763,9 @@ def server_error(error):
 if not app.debug:
     file_handler = FileHandler('error.log')
     file_handler.setFormatter(
-        Formatter('%(asctime)s %(levelname)s: %(message)s [in %(pathname)s:%(lineno)d]')
+        Formatter(
+          '%(asctime)s %(levelname)s: %(message)s [in %(pathname)s:%(lineno)d]'
+        )
     )
     app.logger.setLevel(logging.INFO)
     file_handler.setLevel(logging.INFO)
