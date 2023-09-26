@@ -281,7 +281,7 @@ def create_venue_submission():
         address = form.address.data,
         phone = form.phone.data,
         image_link = form.image_link.data,
-        seeking_talent = form.seeking_talent.data,
+        seeking_talent= True if 'seeking_talent' in request.form else False,
         seeking_description = form.seeking_description.data,
         website_link = form.website_link.data,
         genres = form.genres.data,
@@ -463,7 +463,7 @@ def edit_artist(artist_id):
   form.facebook_link.data = artist.facebook_link
   form.website_link.data = artist.website_link
   form.image_link.data = artist.image_link
-  # form.seeking_venue.data = artist.seeking_venue
+  form.seeking_venue.data = artist.seeking_venue
   form.seeking_description.data = artist.seeking_description
   
   # TODO: populate form with fields from artist with ID <artist_id>
@@ -494,7 +494,7 @@ def edit_artist_submission(artist_id):
     artist.facebook_link = request.form['facebook_link']
     artist.image_link = request.form['image_link']
     artist.website_link = request.form['website_link']
-    # artist.seeking_venue = request.form['seeking_venue']
+    artist.seeking_venue = True if 'seeking_venue' in request.form else False
     artist.seeking_description = request.form['seeking_description']
 
     # add and commit transaction
@@ -535,7 +535,7 @@ def edit_venue(venue_id):
   form.genres.data = venue.genres
   form.facebook_link.data = venue.facebook_link
   form.seeking_description.data = venue.seeking_description
-  # form.seeking_talent.data = venue.seeking_talent
+  form.seeking_talent.data = venue.seeking_talent
   form.website_link.data = venue.website_link
   form.image_link.data = venue.image_link
   
@@ -566,7 +566,7 @@ def edit_venue_submission(venue_id):
     venue.address = request.form['address']
     venue.phone = request.form['phone']
     venue.image_link = request.form['image_link']
-    # venue.seeking_talent = request.form['seeking_talent']
+    venue.seeking_talent = True if 'seeking_talent' in request.form else False
     venue.seeking_description = request.form['seeking_description']
     venue.website_link = request.form['website_link']
     venue.genres = request.form.getlist('genres')
@@ -631,7 +631,7 @@ def create_artist_submission():
         facebook_link = form.facebook_link.data,
         image_link = form.image_link.data,
         website_link = form.website_link.data,
-        # seeking_venue = form.seeking_venue.data,
+        seeking_venue = True if "seeking_venue" in request.form else False,
         seeking_description = form.seeking_description.data
       )
       # add and commit transaction

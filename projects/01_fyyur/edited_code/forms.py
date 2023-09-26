@@ -122,10 +122,12 @@ class VenueForm(Form):
         'facebook_link'
     )
     website_link = StringField(
-        'website_link'
+        'website_link', validators=[URL()]
     )
 
-    seeking_talent = BooleanField( 'seeking_talent' )
+    seeking_talent = BooleanField(
+        'seeking_talent'
+    )
 
     seeking_description = StringField(
         'seeking_description'
@@ -161,10 +163,12 @@ class ArtistForm(Form):
      )
 
     website_link = StringField(
-        'website_link'
+        'website_link', validators=[URL()]
      )
 
-    seeking_venue = BooleanField( 'seeking_venue' )
+    seeking_venue =  BooleanField(
+        'seeking_venue'
+    )
 
     seeking_description = StringField(
             'seeking_description'
