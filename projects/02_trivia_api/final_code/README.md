@@ -3,17 +3,15 @@
 
 ## Project Description
 
-Udacity is invested in creating bonding experiences for its employees and students. A bunch of team members got the idea to hold trivia on a regular basis and created a webpage to manage the trivia app and play the game, but their API experience is limited and still needs to be built out.
+TriviaAPI is a web application to hold a simple trivia to test the general knowledge of users.
+The web application contains a frontend and a backend. The backend provides API endpoints to interact directly with the PostgreSQL database.
+Therefor, the web application provides the following functions:
 
-That's where you come in! Help them finish the trivia app so they can start holding trivia and seeing who's the most knowledgeable of the bunch. The application must:
-
-1. Display questions - both all questions and by category. Questions should show the question, category and difficulty rating by default and can show/hide the answer.
-2. Delete questions.
-3. Add questions and require that they include question and answer text.
+1. Display questions - both all questions and by category can be displayed. Questions should show the question, category and difficulty rating by default and can show/hide the answer.
+2. Delete questions - the user can delete questions from the database.
+3. Add questions and require that they include question and answer text - the user can create new questions.
 4. Search for questions based on a text query string.
 5. Play the quiz game, randomizing either all questions or within a specific category.
-
-Completing this trivia app will give you the ability to structure plan, implement, and test an API - skills essential for enabling your future applications to communicate with others.
 
 ## Getting Started
 
@@ -99,34 +97,49 @@ python test_flaskr.py
 
 ### Endpoints
 
-GET '/api/v1.0/categories'
+```GET '/api/v1.0/categories'``` 
 
 #### GET Requests
 
 ##### GET '/categories'
 - Fetches a dictionary of categories in which the keys are the ids and the value is the corresponding string of the category
-- Request Arguments: None
-- Returns: An object with a single key, categories, that contains an object of id: category_string key:value pairs.
-- Example: ```curl http://127.0.0.1:5000/categories``` 
+- Input arguments: 
+  - ```None```
+- Output:
+  - ```'success'``` (boolean: information whether the request was successful)
+  - ```'categories'``` (dictionary: available categories in database)
+- Example: 
+  - ```curl http://127.0.0.1:5000/categories``` 
+- Returns:
 ```
 {
-    'categories': {
-	'1' : "Science",
-    	'2' : "Art",
-    	'3' : "Geography",
-    	'4' : "History",
-    	'5' : "Entertainment",
-    	'6' : "Sports" 
+  'categories': {
+	  '1' : "Science",
+    '2' : "Art",
+    '3' : "Geography",
+    '4' : "History",
+    '5' : "Entertainment",
+    '6' : "Sports" 
 	},
 	'success': True
 }
 ```
+- Error handling: 
+  - ```HTTP status code 404 NOT FOUND``` in case no categories available
 
 ##### GET '/questions?page=${integer}'
-- Fetches a paginated set of questions, a total number of questions, all categories and current category string. 
-- Request Arguments: page - integer
-- Returns: An object with 10 paginated questions, total questions, object including all categories, and current category string
-- Example: ```curl http://127.0.0.1:5000/questions```
+- Fetches a paginated set of questions, a total number of questions, all categories and current category string.
+- the number of paginated questions is set to 10
+- Input: 
+  - ```None```
+- Output:
+  - ```'success'``` (boolean: information whether the request was successful)
+  - ```'questions'``` (dictionary: paginated questions in database)
+  - ```'total_questions'``` (integer: number of total questions in database)
+  - ```'categories'``` (dictionary: available categories in database)
+- Example: 
+  -```curl http://127.0.0.1:5000/questions```
+- Returns:
 ```
 {
   "categories": {
@@ -213,12 +226,22 @@ GET '/api/v1.0/categories'
   "total_questions": 23
 }
 ```
+- Error handling: 
+  - ```HTTP status code 404 NOT FOUND``` in case no categories available
+  - ```HTTP status code 404 NOT FOUND``` in case no questions available
 
 ##### GET '/categories/${int:id}/questions'
 - Fetches questions for a category specified by id request argument 
-- Request Arguments: id - integer
-- Returns: An object with questions for the specified category, total questions, and current category string
-- Example: ```curl http://127.0.0.1:5000/categories/1/question```
+- Input: 
+  - ```id``` (integer: id of category)  
+- Output:
+  - ```'success'``` (boolean: information whether the request was successful)
+  - ```'questions'``` (dictionary: paginated questions that belong to category)
+  - ```'total_questions'``` (integer: number of related questions)
+  - ```'current_category'``` (string: name of selected category)
+- Example: 
+  - ```curl http://127.0.0.1:5000/categories/1/questions```
+- Returns:
 ``` 
 {
   "current_category": "Science",
@@ -249,74 +272,197 @@ GET '/api/v1.0/categories'
   "total_questions": 3
 }
 ```
+- Error handling: 
+  - ```HTTP status code 404 NOT FOUND``` in case requested category not found
+  - ```HTTP status code 500 INTERNAL SERVER ERROR``` in case filtering failed due to server error
 
 ### DELETE Requests
 
-##### DELETE '/questions/${id}'
+##### DELETE '/questions/${int:id}'
 - Deletes a specified question using the id of the question
-- Request Arguments: ```id``` - integer
-- Returns: Does not need to return anything besides the appropriate HTTP status code.
-- Example: ```curl -X DELETE http://127.0.0.1:5000/questions/5```
+- Input: 
+  - ```id``` (integer: ID of question to delete)
+- Output:
+  - ```'success'``` (boolean: information whether the request was successful)
+  - ```'deleted_question'``` (integer: ID of deleted question)
+- Example: 
+  - ```curl -X DELETE http://127.0.0.1:5000/questions/5```
+- Returns:
 ```
 {
   "deleted_question": 5,
   "success": true
 }
 ```
+- Error handling: 
+  - ```HTTP status code 404 NOT FOUND``` in case requested question not found
+  - ```HTTP status code 422 UNPROCESSABLE``` in case deletion is not processable
 
 ### POST Requests
 
 ##### POST '/quizzes'
-- Sends a post request in order to get the next question 
-- Request Body: 
-{```'previous_questions'```:  an array of question id's such as ```[1, 4, 20, 15]```
-```'quiz_category'```: a string of the current category }
-- Returns: a single new question object 
-- Example: ```curl -X POST -H "Content-Type: application/json" -d '{"previous_questions": [2, 6], "quiz_category": {"type": "Entertainment", "id": "5"}}' http://127.0.0.1:5000/quizzes```
+- Sends a post request in order to get the next question. The question is chosen randomly from a specific category and does not match previous questions.
+- Input:
+  - ```'previous_questions'``` (list: question id's as integer values)
+  - ```'quiz_category'``` (dictionary: chosen category for the quiz)
+  - input data from POST request in the following JSON format:
+  ```{
+    "previous_questions": [1,2,3],
+    "quiz_category": {"type": "Science", "id": "1"}
+  }``` 
+Output:
+  - ```'success'``` (boolean: information whether the request was successful)
+  - ```'question'``` (dictionary: formatted random question from database)
+  - ```'message'``` (string: output in case there are no unused questions left)
+- Example: 
+  - ```curl -X POST -H "Content-Type: application/json" -d '{"previous_questions": [1, 2, 3], "quiz_category": {"type": "Science", "id": "1"}}' http://127.0.0.1:5000/quizzes```
+- Returns:
 ```
 {
-	"question": {
-		"answer": "Tom Cruise",
-		"category": 5,
-		"difficulty": 4,
-		"id": 4,
-		"question": "What actor did author Anne Rice first 		denounce, then praise in the role of her beloved 			Lestat?"
-  	}, 
-  	"success": true
+    "question": {
+        "answer": "The Liver",
+        "category": 1,
+        "difficulty": 4,
+        "id": 20,
+        "question": "What is the heaviest organ in the human body?"
+    },
+    "success": true
 }
 ```
+- Error handling: 
+  - ```HTTP status code 422 UNPROCESSABLE``` in case filtering is not processable
 
 ##### POST '/questions'
 - Sends a post request in order to add a new question
-- Example: ```curl -X POST - H "Content-Type: application/json" -d '{"question": "Who is Donald Trump?", "answer": "the current president of US", "difficulty": 1, "category": "5"}' http://127.0.0.1:5000/questions```
-- Returns: Does not return any new data
+- Input: 
+  - input data from POST request in the following JSON format:
+  ```{
+    "question": "This is a question?",
+    "answer": "this is an answer", 
+    "category": 1, 
+    "difficulty": 5, 
+  }```
+- Output:
+  - ```'success'``` (boolean: information whether the request was successful)
+  - ```'created_question'``` (integer: ID of created question)
+  - ```'questions'``` (dictionary: paginated questions in database)
+  - ```'total_questions'``` (integer: number of total questions)
+- Example: 
+  - ```curl -X POST - H "Content-Type: application/json" -d '{"question": "This is a question?", "answer": "this is an answer", "difficulty": 1, "category": "5"}' http://127.0.0.1:5000/questions```
+- Returns: 
 ```
 {
   "success": true
-  "created": 19
-  "total_questions": 19
+  "created_question": 24
+  "questions": [
+    {
+      "answer": "Maya Angelou",
+      "category": 4,
+      "difficulty": 2,
+      "id": 5,
+      "question": "Whose autobiography is entitled 'I Know Why the Caged Bird Sings'?"
+    },
+    {
+      "answer": "Muhammad Ali",
+      "category": 4,
+      "difficulty": 1,
+      "id": 9,
+      "question": "What boxer's original name is Cassius Clay?"
+    },
+    {
+      "answer": "Apollo 13",
+      "category": 5,
+      "difficulty": 4,
+      "id": 2,
+      "question": "What movie earned Tom Hanks his third straight Oscar nomination, in 1996?"
+    },
+    {
+      "answer": "Tom Cruise",
+      "category": 5,
+      "difficulty": 4,
+      "id": 4,
+      "question": "What actor did author Anne Rice first denounce, then praise in the role of her beloved Lestat?"
+    },
+    {
+      "answer": "Edward Scissorhands",
+      "category": 5,
+      "difficulty": 3,
+      "id": 6,
+      "question": "What was the title of the 1990 fantasy directed by Tim Burton about a young man with multi-bladed appendages?"
+    },
+    {
+      "answer": "Brazil",
+      "category": 6,
+      "difficulty": 3,
+      "id": 10,
+      "question": "Which is the only team to play in every soccer World Cup tournament?"
+    },
+    {
+      "answer": "Uruguay",
+      "category": 6,
+      "difficulty": 4,
+      "id": 11,
+      "question": "Which country won the first ever soccer World Cup in 1930?"
+    },
+    {
+      "answer": "George Washington Carver",
+      "category": 4,
+      "difficulty": 2,
+      "id": 12,
+      "question": "Who invented Peanut Butter?"
+    },
+    {
+      "answer": "Lake Victoria",
+      "category": 3,
+      "difficulty": 2,
+      "id": 13,
+      "question": "What is the largest lake in Africa?"
+    },
+    {
+      "answer": "The Palace of Versailles",
+      "category": 3,
+      "difficulty": 3,
+      "id": 14,
+      "question": "In which royal palace would you find the Hall of Mirrors?"
+    }
+  ],
+  "total_questions": 24
 }
 ```
+- Error handling: 
+  - ```HTTP status code 422 UNPROCESSABLE``` in case any field for the new question is None
+  - ```HTTP status code 422 UNPROCESSABLE``` in case request for creation of new questions is unprocessable
 
 ##### POST '/questions/search'
 - Sends a post request in order to search for a specific question by search term
-- Returns: any array of questions, a number of totalQuestions that met the search term and the current category string 
-Example: ```curl -X POST -H "Content-Type: application/json" -d '{"searchTerm": "peanut butter"}' http://127.0.0.1:5000/questions/search```
+- Input:
+  - input data from POST request in the following JSON format:
+  ```{"searchTerm": "title"}```
+- Output:
+  - ```'success'``` (boolean: information whether the request was successful)
+  - ```'questions'``` (dictionary: paginated questions that include search term)
+  - ```'total_questions'``` (integer: number of found questions)
+Example: 
+  - ```curl -X POST -H "Content-Type: application/json" -d '{"searchTerm": "title"}' http://127.0.0.1:5000/questions/search```
+- Returns: 
 ```
 {
-  "questions": [
-    {
-      "answer": "George Washington Carver", 
-      "category": 4, 
-      "difficulty": 2, 
-      "id": 12, 
-      "question": "Who invented Peanut Butter?"
-    }
-  ], 
-  "success": true, 
-  "total_questions": 1
+    "questions": [
+        {
+            "answer": "Edward Scissorhands",
+            "category": 5,
+            "difficulty": 3,
+            "id": 6,
+            "question": "What was the title of the 1990 fantasy directed by Tim Burton about a young man with multi-bladed appendages?"
+        }
+    ],
+    "success": true,
+    "total_questions": 1
 }
 ```
+- Error handling: 
+  - ```HTTP status code 404 NOT FOUND``` in case search term does not match any questions
+  
 
 ### Error Handling
 Errors are returned in the following JSON format:

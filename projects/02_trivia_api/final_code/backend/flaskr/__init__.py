@@ -16,10 +16,10 @@ def paginate_questions(request, selections):
 
   Input: 
     - request (HTTP request to get the arguments)
-    - selections (list: questions to paginate)
+    - selections (dictionary: questions to paginate)
   
   Output:
-    - current_questions (list: paginated questions from selection)
+    - current_questions (dictionary: paginated questions from selection)
   '''
   page = request.args.get('page', 1, type=int)
   start = (page-1) * QUESTIONS_PER_PAGE
@@ -329,6 +329,7 @@ def create_app(test_config=None):
       - success (boolean: information whether the request was successful)
       - questions (dictionary: paginated questions that belong to category)
       - total_questions (integer: number of related questions)
+      - current_category (string: name of selected category)
     '''
     # get category by id
     category = Category.query.get(id)
@@ -377,6 +378,7 @@ def create_app(test_config=None):
     Output:
       - success (boolean: information whether the request was successful)
       - question (dictionary: formatted random question from database)
+      - message (string: output in case there are no unused questions left)
     '''
     try:
       # get category and previous question from request
@@ -385,24 +387,37 @@ def create_app(test_config=None):
       previous_questions = data.get('previous_questions')
 
       # create a selection of questions based on chosen category
+      # filter by the list of previous questions
+      # sources: 
+      # - https://stackoverflow.com/questions/71564053/returning-a-filtered-list-from-db-by-a-list-of-ids-contained-in-another-query-wi
+      # - https://docs.sqlalchemy.org/en/14/core/sqlelement.html#sqlalchemy.sql.expression.ColumnOperators.notin_
+      
       if category['id'] == 0:
-        # get questions from all categories and avoid previous questions
+        # get questions from all categories
         questions = Question.query.filter(
           Question.id.notin_(previous_questions)
           ).all()
       else:
-        # get questions from specific category and avoid previous questions
+        # get questions from specific category
         questions = Question.query.filter(
-          Question.id.notin_(previous_questions),
-          Question.category == category['id']
+          Question.category == category['id'],
+          Question.id.notin_(previous_questions)
           ).all()
 
       # get random question from selection if there are entries available
       question = None
       if(questions):
         question = random.choice(questions)
-
-      return jsonify({
+      
+      if question is None:
+        # in case there are no questions left, return 'game over'
+        return jsonify({
+          'success': True,
+          'message': 'game over'
+        }), 200
+      else:
+        # in case a questions was found, return question
+        return jsonify({
         'success': True,
         'question': question.format()
       })
