@@ -2,7 +2,7 @@ import os
 import unittest
 import json
 from flask_sqlalchemy import SQLAlchemy
-
+from setting import DB_PASSWORD, DB_NAME_TEST, DB_USER
 from flaskr import create_app
 from models import setup_db, Question, Category
 
@@ -12,19 +12,19 @@ class TriviaTestCase(unittest.TestCase):
 
     def setUp(self):
         """Define test variables and initialize app."""
-        self.app = create_app()
+        self.database_name = DB_NAME_TEST
+        self.database_path = "postgresql://{}:{}@{}/{}".format(
+            DB_USER, DB_PASSWORD, 'localhost:5432', self.database_name)
+        self.app = create_app(self.database_path)
         self.client = self.app.test_client
-        self.database_name = "trivia_test"
-        self.database_path = "postgresql://{}/{}".format(
-            'postgres:Oll1N00sh1n@localhost:5432', self.database_name)
-        setup_db(self.app, self.database_path)
+        #setup_db(self.app, self.database_path)
 
         # binds the app to the current context
-        with self.app.app_context():
-            self.db = SQLAlchemy()
-            self.db.init_app(self.app)
-            # create all tables
-            self.db.create_all()
+        # with self.app.app_context():
+        #     self.db = SQLAlchemy()
+        #     self.db.init_app(self.app)
+        #     # create all tables
+        #     self.db.create_all()
     
     def tearDown(self):
         """Executed after reach test"""
@@ -96,14 +96,14 @@ class TriviaTestCase(unittest.TestCase):
         Positive test function for delete_question() 
         at API endpoint '/questions/<int:id>' by perfoming a DELETE request
         
-        - supposed result: question_id 5 is successfully deleted from database
+        - supposed result: question_id 10 is successfully deleted from database
         '''
-        res = self.client().delete('/questions/5')
+        res = self.client().delete('/questions/10')
         data = json.loads(res.data)
 
         self.assertEqual(res.status_code, 200)
         self.assertEqual(data['success'], True)
-        self.assertEqual(data['deleted_question'], 5)
+        self.assertEqual(data['deleted_question'], 10)
 
     def test_delete_question_404_not_found(self):
         '''
@@ -141,7 +141,7 @@ class TriviaTestCase(unittest.TestCase):
         data = json.loads(res.data)
 
         self.assertEqual(data['success'], True)
-        self.assertTrue(data['created'])
+        self.assertTrue(data['created_question'])
     
     def test_create_question_422_unprocessable(self):
         '''
@@ -153,7 +153,6 @@ class TriviaTestCase(unittest.TestCase):
         '''
         new_question = {
         'question': 'Who painted Mona Lisa?',
-        'answer': '',
         'category': '2',
         'difficulty': 1,
         }
@@ -176,7 +175,7 @@ class TriviaTestCase(unittest.TestCase):
         
         - supposed result: new question is successfully inserted into database
         '''
-        res = self.client().post('questions/search', json={"search": "title"})
+        res = self.client().post('questions/search', json={"searchTerm": "title"})
         data = json.loads(res.data)
 
         self.assertEqual(data['success'], True)
@@ -191,7 +190,7 @@ class TriviaTestCase(unittest.TestCase):
         
         - supposed result: HTTP 404 error
         '''
-        res = self.client().post('questions/search', json={"search": "abcde"})
+        res = self.client().post('questions/search', json={"searchTerm": "abcde"})
         data = json.loads(res.data)
 
         self.assertEqual(data['success'], False)
@@ -267,16 +266,12 @@ class TriviaTestCase(unittest.TestCase):
         '''
         Negative test function for get_quiz_question() 
         at API endpoint '/quizzes' by perfoming a POST request due to
-        category input out of range
+        missing quiz category
         
         - supposed result: HTTP 422 error
         '''
         input_data = {
             'previous_questions':[2, 4],
-            'quiz_category': {
-                'id': 100,
-                'type': ''
-            }
         }
         res = self.client().post('/quizzes', json=input_data)
         data = json.loads(res.data)

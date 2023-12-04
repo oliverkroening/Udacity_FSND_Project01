@@ -32,8 +32,11 @@ def paginate_questions(request, selections):
 def create_app(test_config=None):
   # create and configure the app
   app = Flask(__name__)
-  setup_db(app)
-  
+
+  if test_config is None:
+    setup_db(app)
+  else:
+    setup_db(app, test_config)
   '''
   @TODO: Set up CORS. Allow '*' for origins. 
   Delete the sample route after completing the TODOs
@@ -128,7 +131,7 @@ def create_app(test_config=None):
       - categories (dictionary: available categories in database)
     '''
     # get all questions via database query
-    questions = Question.query.all()
+    questions = Question.query.order_by(Question.id).all()
     # get total number of questions in database
     total_questions = len(questions)
     # paginate questions
@@ -142,7 +145,9 @@ def create_app(test_config=None):
       categories[category.id] = category.type
     
     # create HTTP 404 error (not found)
-    if (len(categories) == 0) or (total_questions == 0):
+    if ((len(categories) == 0) or
+        (len(current_questions) == 0) or
+        (total_questions == 0)):
       abort(404)
     
     # return data

@@ -1,0 +1,73 @@
+# Version of AWS
+> aws --version
+
+# Configuration of AWS CLI
+#-------------------------
+
+# Create IAM User:
+# 1. Open IAM-Dashboard: https://us-east-1.console.aws.amazon.com/iam/home?region=us-east-1#/home
+# 2. "Users" -> "Add Users"
+# 3. add user name "myAdmin" and select "Access key - Programmatic access"
+# 4. "Next" to enter permissions -> "Attach existing policies directly"
+# 5. select "AdministratorAccess" (https://us-east-1.console.aws.amazon.com/iam/home?region=us-east-1#/policies/details/arn%3Aaws%3Aiam%3A%3Aaws%3Apolicy%2FAdministratorAccess?section=permissions)
+# 6. "Next" to enter tags -> "Next" to enter preview -> "Create User" to finalize
+# Password: 41oP6Oa+
+
+# Login in AWS CLI:
+> aws configure
+> AWS Access Key ID: AKIA3CMBDE46TUZ77SJ6
+> AWS Secret Access Key: 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
+> Default region name: us-east-1
+> Default Output format: json
+
+# set session token to None:
+> aws configure set aws_session_token ""
+
+# Perform AWS CLI commands:
+#--------------------------
+
+# list all aws users:
+> aws iam list-users
+
+# View the current configuration
+> aws configure list 
+
+# View all existing profile names
+> aws configure list-profiles
+
+# aws configure set <parameter> <value>  --profile <profile-name>
+> aws configure set region us-east-2 
+
+# Create a Bucket using the CLI
+#------------------------------
+# 1. Create a public bucket in the us-east-1 region:
+> aws s3api  create-bucket --bucket mybucket11350031081 --acl bucket-owner-full-control --region us-east-2 --create-bucket-configuration LocationConstraint=us-east-2
+
+# parameters:
+# --bucket option specifies the bucket name of your choice. It must be unique across all AWS accounts.
+# --acl option specifies the accessibility level
+# --region specifies the AWS region where you want to create this bucket.
+# --create-bucket-configuration: If you want to create the bucket in the desired region outside of us-east-1, you will need something like 
+# --region us-east-2 --create-bucket-configuration LocationConstraint=us-east-2 which will set an appropriate LocationConstraint.
+
+# 2. Upload a sample file to your bucket.
+> aws s3api put-object --bucket mybucket11350031081 --key sample.html --body sample.html --content-type text/html
+
+# parameters:
+# --key option specifies the name you want to assign to your object in the bucket
+# --body option specifies the file name (complete path) to upload from your local system
+# --content-type specifies the standard MIME type describing the format of the contents.
+
+# 3. show all of the S3 buckets in your account
+> aws s3 ls
+
+# 4. Delete the bucket and its content. A bucket can only be deleted if it is empty.
+> aws s3api delete-object --bucket mybucket11350031081 --key sample.html
+> aws s3api delete-bucket --bucket mybucket11350031081
+
+
+
+
+
+
+

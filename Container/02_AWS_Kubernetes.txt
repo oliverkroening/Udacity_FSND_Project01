@@ -1,0 +1,8 @@
+Launch the AWS Web Console from your Udacity Classroom
+------------------------------------------------------
+You are given a federated user account, a temporary AWS user account with limited permissions, that you can use in this program.
+Before you begin, be sure to log out of any AWS instances you may already have running. Then click on the “LAUNCH CLOUD GATEWAY” link in the left navigation pane to access a customized instance with the right permissions specific to this program. It will open up a pop-up, and clicking on the "Open Cloud Console" button in the pop-up will open the AWS console in a new browser tab. This may take a few moments to load the first time. See a brief video below for a walkthroug
+
+AWS: https://us-east-1.console.aws.amazon.com/console/home?region=us-east-1#
+
+S3: https://aws.amazon.com/s3/

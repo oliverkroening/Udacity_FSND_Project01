@@ -7,10 +7,19 @@ from urllib.request import urlopen
 
 app = Flask(__name__)
 
-AUTH0_DOMAIN = @TODO_REPLACE_WITH_YOUR_DOMAIN
+AUTH0_DOMAIN = 'dev-j3q44hh5n3sv0ndq.us.auth0.com'
 ALGORITHMS = ['RS256']
-API_AUDIENCE = @TODO_REPLACE_WITH_YOUR_API_AUDIENCE
+API_AUDIENCE = 'image' # API_IDENTIFIER
 
+# https://auth0.com/docs/api/authentication#authorization-code-flow
+# GET https://dev-j3q44hh5n3sv0ndq.us.auth0.com/authorize?
+#   audience=image&
+#   response_type=token&
+#   client_id=fA2qQe9bYrZe8HbXrRwwya1c9WVheBr0&
+#   redirect_uri=https://localhost:8080/login-results
+# https://dev-j3q44hh5n3sv0ndq.us.auth0.com/authorize?audience=image&response_type=token&client_id=fA2qQe9bYrZe8HbXrRwwya1c9WVheBr0&redirect_uri=https://localhost:8080/login-results
+# JWT for oliver.kroening@gmx.de:
+# eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6IlVLSTBCdG1Wa1BXVUxhdHh0VU0zSiJ9.eyJpc3MiOiJodHRwczovL2Rldi1qM3E0NGhoNW4zc3YwbmRxLnVzLmF1dGgwLmNvbS8iLCJzdWIiOiJhdXRoMHw2NTNmOWIxOTE4ZDgxODc3ZmJiMWRlOGQiLCJhdWQiOiJpbWFnZSIsImlhdCI6MTY5ODY2NzczNiwiZXhwIjoxNjk4Njc0OTM2LCJhenAiOiJmQTJxUWU5YllyWmU4SGJYclJ3d3lhMWM5V1ZoZUJyMCIsInNjb3BlIjoiIiwicGVybWlzc2lvbnMiOlsiZ2V0OmltYWdlcyJdfQ.bBhGj4Fs4OG-Ikv50_I-HAF11iSQ2ziACGMmXZ-lHtUkElYf-4FvEltBFPAcZBD2Bn_resMOm4n8JJnYdSqrDg-H43owFbCKGKpzjslXNP0Y9VJ-24Di-h_ZePsDHlAUrbVQ-ob3ZlwPfLhrs1vuuAuCConf_4UtYeXtwMD4j9kGyJbyF2hp3PXxKzUbQ6nks6KJgkWC1CpGHm3pJKO8Aqb0PtEg0wO41jGSVRpZ8sann_JZAOWJTRmay17lNmvaLY0yAjaYaIpoHoUBRWPuEH13onUCDsf1sU2AL9tXHzxACYSvgp1L-7fwN2OlwU3FDMge9Fw38MjOxnxRm7sWmQ
 
 class AuthError(Exception):
     def __init__(self, error, status_code):
@@ -104,21 +113,44 @@ def verify_decode_jwt(token):
                 'description': 'Unable to find the appropriate key.'
             }, 400)
 
+def check_permissions(permission, payload):
+    if 'permissions' not in payload:
+        raise AuthError({
+            'code': 'invalid_claims',
+            'description': 'Permissions not included in JWT.'
+        }, 400)
 
-def requires_auth(f):
-    @wraps(f)
-    def wrapper(*args, **kwargs):
-        token = get_token_auth_header()
-        try:
-            payload = verify_decode_jwt(token)
-        except:
-            abort(401)
-        return f(payload, *args, **kwargs)
+    if permission not in payload['permissions']:
+        raise AuthError({
+            'code': 'unauthorized',
+            'description': 'Permission not found.'
+        }, 403)
+    return True
 
-    return wrapper
 
-@app.route('/headers')
-@requires_auth
-def headers(payload):
-    print(payload)
-    return 'Access Granted'
+def requires_auth(permission=''):
+    def requires_auth_decorator(f):
+        @wraps(f)
+        def wrapper(*args, **kwargs):
+            token = get_token_auth_header()
+            try:
+                payload = verify_decode_jwt(token)
+            except:
+                abort(401)
+
+            check_permissions(permission, payload)
+            return f(payload, *args, **kwargs)
+        return wrapper
+    return requires_auth_decorator
+
+# @app.route('/headers')
+# @requires_auth
+# def headers(payload):
+#     print(payload)
+#     return 'Access Granted'
+
+@app.route('/image')
+@requires_auth('get:images')
+def images(jwt):
+    print(jwt)
+    return 'not implemented'

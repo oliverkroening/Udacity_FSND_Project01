@@ -1,0 +1,99 @@
+# to check the version
+> docker version
+
+# to verify that Docker can pull and run images (we will talk more about images next)
+> docker run hello-world 
+
+# fetch an image and then create and run a container.
+> docker run -d -p 80:80 docker/getting-started
+# access this container using http://localhost:80 in your browser
+# -d - run the container in detached mode (in the background)
+# -p 80:80 - map port 80 of the host to port 80 in the container
+# docker/getting-started - the image to use
+
+# Docker Engine
+# Docker Engine is an application that consists of a daemon, an API, and a client:
+# The Docker daemon is a server that manages the images, containers, networks, and volumes.
+# The Docker client is the user interface for Docker. The client is a CLI, so most of the work you do with Docker will take place at the command line.
+
+# Docker Image
+# A Docker image is the set of instructions for creating a container. The image typically includes a file system and the parameters that will be used for the container.
+
+# Docker Container
+# A Docker container is just the Docker-specific implementation of the concept. In practice, Docker containers are created from Docker images - a container is a runnable instance of an image. Note that since the image is a set of instructions for creating a container, multiple containers can be created from the same image.
+
+# Docker Registry
+# Docker images can be stored and distributed using a Docker registry. In the next classroom concept, you will download and run an image from DockerHub, which is a free registry with many images you can use.
+
+# process:
+# Dockerfile → (docker build) Docker Image → (docker run) Docker container
+# 1. Write Dockerfile: 
+# - example https://github.com/docker/labs/blob/master/beginner/static-site/Dockerfile
+# - commands: https://docs.docker.com/engine/reference/builder/
+
+# 2. Build an Image:
+# This command will look for a Dockerfile in the `pwd`, and create myImage
+> docker build  --tag myImage  [OPTIONS] path_where_to_store_the_image 
+# pull an image from DockerHub:
+> docker pull tomcat:latest
+> docker pull postgres:latest
+
+# 3. Create and run a Container:
+> docker run --name myContainer myImage
+# example postgres with environment variables:
+> docker run --name psql -e POSTGRES_PASSWORD=password! -p 5433:5432 -d postgres:latest
+# --name flag allows you to specify a name for the container that can be used later to reference the container. If you don’t specify a name, Docker will assign a random string name to the container.
+# The -e flag stands for “environment”. This sets the environment variable POSTGRES_PASSWORD to the value password!.
+# The -p flag stands for “publish”. This allows you to bind your local machine’s port 5433 to the container port 5432.
+# The -d stands for “detach”. This tells Docker run the indicated image in the background and print the container ID. When you use this command, you will still be able to use the terminal to run other commands, otherwise, you would need to open a new terminal.
+
+# list running containers:
+> docker ps
+# connect to running postgres container using the postgres client:
+> psql -h 127.0.0.1 -p 5433 -U postgres
+
+# 4. clean-up:
+#List all containers
+> docker ps --all
+# Stop
+> docker stop <container_ID>
+# Remove
+> docker container rm <container_ID>
+
+# List all images
+> docker image ls
+# Remove
+> docker image rm <image_ID>
+
+# Example:
+# 1. Create an empty Dockerfile
+> touch Dockerfile
+# open the file in any text editor, such as VS Code
+> code .
+
+# 2. Write Dockerfile content In the Dockerfile, add the lines
+> FROM  debian:jessie-slim
+> ENTRYPOINT ["echo", "hello world"]
+If you have issues using FROM debian:jessie-slim you can try FROM alpine:latest instead.
+
+# 3. Build an image Build the image from the same directory using the command
+> docker build --tag test .
+Here, the image name is "test". Note that the full stop (.) tells the docker build command to use the Dockerfile found in the current directory.
+
+# 4. Create and run a container Once the image is built, you can run the container with the command:
+> docker run --name myContainer  test --rm
+where, --rm option ensures that the container is removed when it exits.
+
+# 5. Clean up - Stop and remove the container:
+> docker ps -a
+> docker container stop <container_ID>
+> docker container rm <container_ID>
+
+
+# Key Terms
+# - Dockerfile: A file containing instructions on how to translate an application into an image that can be run in containers
+# - Base Image: A set of common dependencies built into a Docker image that acts as a starting point to build an application’s Docker images to reduce build times
+# - Image: A snapshot of dependencies and code used by Docker containers to run an application
+# - Container: Grouped software dependencies and packages that make it easier and more reliable to deploy software
+# - DockerHub: A centralized place (online) to store and share Docker images.
+# - Docker Registry: An application that stores and lets you distribute Docker images.

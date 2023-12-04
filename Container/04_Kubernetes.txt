@@ -1,0 +1,105 @@
+# Creating Cluster using Browser
+# ------------------------------
+
+# Prerequisites to Create a Kubernetes Cluster
+# --------------------------------------------
+
+# 1. Create VPC
+# -------------
+# go to https://us-east-1.console.aws.amazon.com/console/services?region=us-east-1 and choose service "VPC"
+# "Your VPCs" to check default VPC
+# "Subnets" to check the subnets for default VPC
+
+# 2. create role for EKS-Cluster
+# ------------------------------
+# go to https://us-east-1.console.aws.amazon.com/console/services?region=us-east-1 and choose service "IAM"
+# -> "Roles" -> "Create Role"
+# "AWS service" with use case "EKS-Cluster" -> "Next"
+# check permission "AmazonEKSClusterPolicy" -> "Next"
+# check summary of role
+# - provide Role Name: myEKSClusterRole
+# - remain defaule Role description
+# -> "Create Role"
+
+# 3. create role for Node Group
+# ------------------------------
+# go to https://us-east-1.console.aws.amazon.com/console/services?region=us-east-1 and choose service "IAM"
+# -> "Roles" -> "Create Role"
+# "AWS service" with use case "EC2" -> "Next"
+# select "AmazonEKSWorkerNodePolicy"
+# select "AmazonEC2ContainerRegistryReadOnly"
+# select "AmazonEKS_CNI_Policy"
+# -> "Next"
+# check summary of role
+# - provide Role Name: myEKSWorkerNodeRole
+# - remain defaule Role description
+# -> "Create Role"
+
+# 4. create SSH key pair
+# ----------------------
+# go to https://us-east-1.console.aws.amazon.com/console/services?region=us-east-1 and choose service "EC2"
+# click under "Network & Security" -> "Key Pairs"
+# "Create key pair"
+# provide name: nd0044_key_pair
+# choose "RSA" and ".ppk"
+# "Create key pair"
+
+
+# Create an EKS Cluster
+# ---------------------
+# go to https://us-east-1.console.aws.amazon.com/console/services?region=us-east-1 and choose service "Elastic Kubernetes Service"
+# "Clusters" -> "Add Cluster" -> "Create"
+# provide name: myEKSCluster
+# check default Kubernetes version: 1.28
+# select role: myEKSClusterRole (default)
+# "Next"
+# select default VPC settings for your region
+# select default security group
+# "Next" until create and create -> "Create"
+
+# Create an Node Group
+# ---------------------
+# Cluster = Active
+# click "myEKSCluster" -> "compute"
+# "Add Node Group"
+# Provide name "myNodeGroup", and attach the "myEKSWorkerNodeRole" IAM role to the Node Group. Leave the remaining fields in this section as default.
+# "Next"
+# Set compute and scaling configuration -> "Next"
+# Specify networking: Choose the subnets selected earlier while creating the cluster. Choose the SSH key pair created in the prerequisites section above. Also, allow remote access from anywhere on the Internet ("All").
+# "Next" -> "Create"
+
+
+# Creating Cluster using EKSCTL
+# -----------------------------
+
+# 1. Create a basic cluster
+# A cluster will be created with default parameters, such as:
+# - An auto-generated name
+# - Two m5.large worker nodes. Recall that the worker nodes are the virtual machines, and the m5.large type defines that each VM will have 2 vCPUs, 8 GiB memory, and up to 10 Gbps network bandwidth.
+# - Use the Linux AMIs as the underlying machine image
+# - Your default region
+# - A dedicated VPC
+> eksctl create cluster
+[or]
+> eksctl create cluster --name myCluster --nodes=4
+
+# 2. Create an advanced cluster from YAML-file
+> eksctl create cluster --config-file=<path>
+
+# 3. List the details
+> eksctl get cluster [--name=<name>][--region=<region>]
+
+# 4. Delete a cluster
+> eksctl delete cluster --name=<name>
+
+# Creating Cluster using EKSCTL and Kubectl
+# -----------------------------------------
+
+# 1. Create Cluster:
+> eksctl create cluster --name eksctl-demo1
+
+# 2. Show Nodes:
+> kubectl get nodes 
+
+# 3. Delete Cluster:
+> eksctl delete cluster eksctl-demo1

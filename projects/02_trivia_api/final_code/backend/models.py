@@ -4,10 +4,10 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_moment import Moment
 from flask_migrate import Migrate
 import json
+from setting import DB_NAME, DB_PASSWORD, DB_USER
 
-database_name = "trivia"
-database_path = "postgresql://{}/{}".format(
-  'postgres:Oll1N00sh1n@localhost:5432', database_name)
+database_name = DB_NAME
+database_path = "postgresql://{}:{}@{}/{}".format(DB_USER, DB_PASSWORD, 'localhost:5432', database_name)
 
 db = SQLAlchemy()
 
