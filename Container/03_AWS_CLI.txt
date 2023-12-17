@@ -11,12 +11,12 @@
 # 4. "Next" to enter permissions -> "Attach existing policies directly"
 # 5. select "AdministratorAccess" (https://us-east-1.console.aws.amazon.com/iam/home?region=us-east-1#/policies/details/arn%3Aaws%3Aiam%3A%3Aaws%3Apolicy%2FAdministratorAccess?section=permissions)
 # 6. "Next" to enter tags -> "Next" to enter preview -> "Create User" to finalize
-# Password: 41oP6Oa+
+# Password: XXXX
 
 # Login in AWS CLI:
 > aws configure
-> AWS Access Key ID: AKIA3CMBDE46TUZ77SJ6
-> AWS Secret Access Key: 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
+> AWS Access Key ID: XXXX
+> AWS Secret Access Key: XXXX
 > Default region name: us-east-1
 > Default Output format: json
 
